@@ -8,6 +8,12 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 TIKTOK_USERS = os.getenv("TIKTOK_USERNAMES").split(",")
 CHANNEL_ID = 1486193867463069777
 
+# Custom messages per username (tiktok username: display name)
+USER_NAMES = {
+    TIKTOK_USERS[0]: "Binwalk",
+    TIKTOK_USERS[1]: "Anas",
+}
+
 class MyBot(discord.Client):
     def __init__(self):
         super().__init__(intents=discord.Intents.default())
@@ -32,7 +38,8 @@ class MyBot(discord.Client):
                             latest = items[0].find("link").text
                             if latest != self.last_video.get(username):
                                 if username in self.last_video:
-                                    await channel.send(f"🎵 **@{username}** just posted a new TikTok! {latest}")
+                                    display = USER_NAMES.get(username, username)
+                                    await channel.send(f"@everyone {display} just posted a new video, go check it out!! {latest}")
                                 self.last_video[username] = latest
                 except Exception as e:
                     print(f"Error checking {username}: {e}")
