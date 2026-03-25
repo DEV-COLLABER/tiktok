@@ -5,22 +5,32 @@ on:
   schedule:
     - cron: '0 */5 * * *'
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   bot:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install dependencies
         run: pip install discord.py feedparser requests
 
+      - name: Run bot
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          TIKTOK_USERNAMES: ${{ secrets.TIKTOK_USERNAMES }}
+        run: timeout 17000 python bot.py || true
+
       - name: Trigger next run
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             await github.rest.actions.createWorkflowDispatch({
@@ -29,9 +39,3 @@ jobs:
               workflow_id: 'bot.yml',
               ref: 'master'
             })
-
-      - name: Run bot
-        env:
-          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          TIKTOK_USERNAMES: ${{ secrets.TIKTOK_USERNAMES }}
-        run: timeout 17000 python bot.py || true
