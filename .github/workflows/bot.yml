@@ -21,7 +21,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install discord.py feedparser requests
+        run: |
+          pip install discord.py TikTokApi playwright
+          playwright install chromium
 
       - name: Run bot
         env:

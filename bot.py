@@ -1,14 +1,12 @@
 import discord
 import asyncio
 import os
-import requests
-import xml.etree.ElementTree as ET
+from TikTokApi import TikTokApi
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 TIKTOK_USERS = os.getenv("TIKTOK_USERNAMES").split(",")
 CHANNEL_ID = 1486193867463069777
 
-# Custom messages per username (tiktok username: display name)
 USER_NAMES = {
     TIKTOK_USERS[0]: "Binwalk",
     TIKTOK_USERS[1]: "Anas",
@@ -26,24 +24,26 @@ class MyBot(discord.Client):
     async def check_tiktok(self):
         await self.wait_until_ready()
         channel = self.get_channel(CHANNEL_ID)
-        while not self.is_closed():
-            for username in TIKTOK_USERS:
-                try:
-                    url = f"https://www.tiktok.com/@{username}/rss"
-                    r = requests.get(url, headers={"User-Agent": "Mozilla/5.0"})
-                    if r.status_code == 200:
-                        root = ET.fromstring(r.content)
-                        items = root.findall("./channel/item")
-                        if items:
-                            latest = items[0].find("link").text
-                            if latest != self.last_video.get(username):
+        async with TikTokApi() as api:
+            await api.create_sessions(num_sessions=1, sleep_after=3, headless=True)
+            while not self.is_closed():
+                for username in TIKTOK_USERS:
+                    try:
+                        user = api.user(username)
+                        videos = []
+                        async for video in user.videos(count=1):
+                            videos.append(video)
+                        if videos:
+                            latest_id = videos[0].id
+                            if latest_id != self.last_video.get(username):
                                 if username in self.last_video:
                                     display = USER_NAMES.get(username, username)
-                                    await channel.send(f"@everyone {display} just posted a new video, go check it out!! {latest}")
-                                self.last_video[username] = latest
-                except Exception as e:
-                    print(f"Error checking {username}: {e}")
-            await asyncio.sleep(300)
+                                    url = f"https://www.tiktok.com/@{username}/video/{latest_id}"
+                                    await channel.send(f"@everyone {display} just posted a new video, go check it out!! {url}")
+                                self.last_video[username] = latest_id
+                    except Exception as e:
+                        print(f"Error checking {username}: {e}")
+                await asyncio.sleep(300)
 
 bot = MyBot()
 bot.run(DISCORD_TOKEN)
