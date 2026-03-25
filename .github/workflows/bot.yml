@@ -3,11 +3,11 @@ name: TikTok Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 */5 * * *'
+    - cron: '0 */30 * * *'  # Run every 30 minutes
 
 permissions:
+  contents: write
   actions: write
-  contents: read
 
 jobs:
   run-bot:
@@ -22,26 +22,22 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install discord.py TikTokApi playwright
-          playwright install chromium
+          pip install discord.py requests
 
       - name: Run bot
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
           TIKTOK_USERNAMES: ${{ secrets.TIKTOK_USERNAMES }}
-        run: timeout 17000 python bot.py || true
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+        run: python bot.py
 
-  restart-bot:
-    runs-on: ubuntu-latest
-    needs: run-bot
-    steps:
-      - name: Trigger next run
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'bot.yml',
-              ref: 'master'
-            })
+      - name: Save state
+        if: always()
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          if [ -f last_videos.json ]; then
+            git add last_videos.json
+            git diff --cached --quiet || git commit -m "Update last videos state [skip ci]"
+            git push || echo "Push failed, will retry next run"
+          fi
