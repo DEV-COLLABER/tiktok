@@ -1,0 +1,37 @@
+name: TikTok Bot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */5 * * *'
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install discord.py feedparser
+
+      - name: Trigger next run
+        uses: actions/github-script@v6
+        with:
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'bot.yml',
+              ref: 'master'
+            })
+
+      - name: Run bot
+        env:
+          DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
+          TIKTOK_RSS: ${{ secrets.TIKTOK_RSS }}
+        run: timeout 17000 python bot.py || true
