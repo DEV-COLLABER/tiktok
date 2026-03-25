@@ -17,7 +17,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install discord.py feedparser
+        run: pip install discord.py feedparser requests
 
       - name: Trigger next run
         uses: actions/github-script@v6
@@ -33,5 +33,5 @@ jobs:
       - name: Run bot
         env:
           DISCORD_TOKEN: ${{ secrets.DISCORD_TOKEN }}
-          TIKTOK_RSS: ${{ secrets.TIKTOK_RSS }}
+          TIKTOK_USERNAMES: ${{ secrets.TIKTOK_USERNAMES }}
         run: timeout 17000 python bot.py || true
