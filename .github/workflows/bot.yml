@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  bot:
+  run-bot:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +29,10 @@ jobs:
           TIKTOK_USERNAMES: ${{ secrets.TIKTOK_USERNAMES }}
         run: timeout 17000 python bot.py || true
 
+  restart-bot:
+    runs-on: ubuntu-latest
+    needs: run-bot
+    steps:
       - name: Trigger next run
         uses: actions/github-script@v7
         with:
